@@ -1,0 +1,6 @@
+{
+  "name": "EARTH: AI Brain Studio",
+  "description": "A unique chat application where you can define the AI's personality and behavior. Craft your perfect conversation partner by giving it specific instructions, and watch it adapt in real-time. Your settings are saved, making every chat uniquely yours.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
