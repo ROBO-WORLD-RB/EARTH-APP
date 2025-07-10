@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Chat, Content } from "@google/genai";
-import { Message } from '../types';
+import { Message, FileMessage } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
@@ -12,10 +12,33 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 const model = 'gemini-2.5-flash-preview-04-17';
 
 export function createChat(systemInstruction: string, history: Message[]): Chat {
-  const formattedHistory: Content[] = history.map(msg => ({
-    role: msg.role,
-    parts: [{ text: msg.content }]
-  }));
+  const formattedHistory: Content[] = history.map(msg => {
+    const parts: any[] = [{ text: msg.content }];
+    
+    // Add file content if present
+    if (msg.files && msg.files.length > 0) {
+      msg.files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+          parts.push({
+            inlineData: {
+              mimeType: file.type,
+              data: file.content.split(',')[1] // Remove data:image/...;base64, prefix
+            }
+          });
+        } else {
+          // For text files, add as text content
+          parts.push({
+            text: `\n[File: ${file.name}]\n${file.content}\n`
+          });
+        }
+      });
+    }
+    
+    return {
+      role: msg.role,
+      parts
+    };
+  });
   
   const chat = ai.chats.create({
     model: model,
@@ -28,8 +51,16 @@ export function createChat(systemInstruction: string, history: Message[]): Chat 
   return chat;
 }
 
-export async function generateTitle(prompt: string): Promise<string> {
-    const titlePrompt = `Generate a concise, 2-4 word title for a chat conversation that starts with this prompt: "${prompt}". Do not use quotes or special characters in the title.`;
+export async function generateTitle(prompt: string, files?: FileMessage[]): Promise<string> {
+    let titlePrompt = `Generate a concise, 2-4 word title for a chat conversation that starts with this prompt: "${prompt}"`;
+    
+    if (files && files.length > 0) {
+        const fileNames = files.map(f => f.name).join(', ');
+        titlePrompt += ` and includes these files: ${fileNames}`;
+    }
+    
+    titlePrompt += `. Do not use quotes or special characters in the title.`;
+    
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-preview-04-17',

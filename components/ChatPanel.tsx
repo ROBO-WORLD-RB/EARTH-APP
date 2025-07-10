@@ -1,15 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Message } from '../types';
+import { Message, FileMessage } from '../types';
 import SendIcon from './icons/SendIcon';
 import BotIcon from './icons/BotIcon';
 import UserIcon from './icons/UserIcon';
 import EarthIcon from './icons/EarthIcon';
+import FileUploadButton from './FileUploadButton';
+import FilePreview from './FilePreview';
 
 interface ChatPanelProps {
   messages: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, files?: FileMessage[]) => void;
   isLoading: boolean;
+  attachedFiles?: FileMessage[];
+  onFileRemove?: (fileId: string) => void;
+  resetFilesTrigger?: number;
 }
 
 const ChatMessage: React.FC<{ message: Message }> = ({ message }) => {
@@ -53,7 +58,23 @@ const ChatMessage: React.FC<{ message: Message }> = ({ message }) => {
               </ReactMarkdown>
             </div>
           ) : (
-            <p className="whitespace-pre-wrap text-[17px]">{message.content}</p>
+            <div>
+              {message.content && (
+                <p className="whitespace-pre-wrap text-[17px] mb-3">{message.content}</p>
+              )}
+              {message.files && message.files.length > 0 && (
+                <div className="space-y-2">
+                  {message.files.map((file) => (
+                    <FilePreview
+                      key={file.id}
+                      file={file}
+                      showRemove={false}
+                      className="bg-white/20 dark:bg-gray-800/20"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -61,8 +82,16 @@ const ChatMessage: React.FC<{ message: Message }> = ({ message }) => {
   );
 };
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isLoading }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ 
+  messages, 
+  onSendMessage, 
+  isLoading, 
+  attachedFiles = [],
+  onFileRemove,
+  resetFilesTrigger
+}) => {
   const [input, setInput] = useState('');
+  const [pendingFiles, setPendingFiles] = useState<FileMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -73,10 +102,17 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isLoadin
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (resetFilesTrigger !== undefined) {
+      setPendingFiles([]);
+    }
+  }, [resetFilesTrigger]);
+
   const handleSend = () => {
-    if (input.trim() && !isLoading) {
-      onSendMessage(input.trim());
+    if ((input.trim() || pendingFiles.length > 0) && !isLoading) {
+      onSendMessage(input.trim(), pendingFiles);
       setInput('');
+      setPendingFiles([]);
     }
   };
   
@@ -85,6 +121,22 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isLoadin
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const handleFileSelect = async (files: File[]) => {
+    try {
+      const { processFile } = await import('../utils/fileProcessor');
+      const processedFiles = await Promise.all(
+        files.map(file => processFile(file))
+      );
+      setPendingFiles(prev => [...prev, ...processedFiles]);
+    } catch (error) {
+      console.error('Error processing files:', error);
+    }
+  };
+
+  const handleFileRemove = (fileId: string) => {
+    setPendingFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
   return (
@@ -116,28 +168,68 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ messages, onSendMessage, isLoadin
         )}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700">
-        <div className="relative max-w-4xl mx-auto">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Talk to your custom AI..."
-            rows={1}
-            className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full py-3 pl-5 pr-16 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-400 focus:outline-none resize-none transition-all duration-200"
-            disabled={isLoading}
-            style={{paddingTop: '0.8rem', paddingBottom: '0.8rem'}}
-          />
-          <button
-            onClick={handleSend}
-            disabled={isLoading || !input.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:opacity-90 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all"
-            aria-label="Send message"
-          >
-            <SendIcon />
-          </button>
+              {/* File attachments preview */}
+        {(pendingFiles.length > 0 || attachedFiles.length > 0) && (
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Attached files:
+                </span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {pendingFiles.length + attachedFiles.length} file(s)
+                </span>
+              </div>
+              <div className="space-y-2">
+                {pendingFiles.map((file) => (
+                  <FilePreview
+                    key={file.id}
+                    file={file}
+                    onRemove={handleFileRemove}
+                  />
+                ))}
+                {attachedFiles.map((file) => (
+                  <FilePreview
+                    key={file.id}
+                    file={file}
+                    onRemove={onFileRemove}
+                    showRemove={false}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700">
+          <div className="relative max-w-4xl mx-auto flex items-end gap-2">
+            <FileUploadButton
+              onFileSelect={handleFileSelect}
+              disabled={isLoading}
+              className="flex-shrink-0"
+            />
+            <div className="flex-1 relative">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Talk to your custom AI..."
+                rows={1}
+                className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full py-3 pl-5 pr-16 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-400 focus:outline-none resize-none transition-all duration-200"
+                disabled={isLoading}
+                style={{paddingTop: '0.8rem', paddingBottom: '0.8rem'}}
+              />
+              <button
+                onClick={handleSend}
+                disabled={isLoading || (!input.trim() && pendingFiles.length === 0)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:opacity-90 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all"
+                aria-label="Send message"
+              >
+                <SendIcon />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
     </div>
   );
 };

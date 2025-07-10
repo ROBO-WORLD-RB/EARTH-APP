@@ -17,11 +17,12 @@ interface SidePanelProps {
   activeChatId: string | null;
   onNewChat: () => void;
   onSelectChat: (id: string) => void;
+  onDeleteChat?: (id: string) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
 
-const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, onSave, onClear, saveStatus, conversations, activeChatId, onNewChat, onSelectChat, theme, onToggleTheme }) => {
+const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, onSave, onClear, saveStatus, conversations, activeChatId, onNewChat, onSelectChat, onDeleteChat, theme, onToggleTheme }) => {
   const [instruction, setInstruction] = useState(initialInstruction);
 
   useEffect(() => {
@@ -107,17 +108,45 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
         <div className="flex-grow overflow-y-auto space-y-2 pr-2 -mr-3">
           {conversations.length > 0 ? (
             conversations.map((conv) => (
-              <button 
-                key={conv.id} 
-                onClick={() => onSelectChat(conv.id)}
-                className={`w-full text-left p-3 rounded-lg transition-colors text-sm font-medium truncate ${
+              <div 
+                key={conv.id}
+                className={`group flex items-center justify-between p-3 rounded-lg transition-colors text-sm font-medium truncate ${
                   conv.id === activeChatId 
                   ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200' 
                   : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300'
                 }`}
               >
-                {conv.title}
-              </button>
+                <button 
+                  onClick={() => onSelectChat(conv.id)}
+                  className="flex-1 text-left truncate"
+                >
+                  {conv.title}
+                </button>
+                {onDeleteChat && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteChat(conv.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 transition-all"
+                    title="Delete conversation"
+                  >
+                    <svg 
+                      className="w-4 h-4 text-red-500 dark:text-red-400" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth={2} 
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" 
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
             ))
           ) : (
             <div className="text-center text-gray-400 dark:text-gray-500 pt-8">

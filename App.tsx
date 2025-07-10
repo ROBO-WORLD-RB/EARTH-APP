@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chat } from '@google/genai';
-import { Message, Conversation } from './types';
+import { Message, Conversation, FileMessage } from './types';
 import { createChat, generateTitle } from './services/geminiService';
+import { fileStorage } from './services/fileStorage';
 import ChatPanel from './components/ChatPanel';
 import SidePanel from './components/SidePanel';
 import PanelToggleButton from './components/PanelToggleButton';
@@ -21,6 +22,7 @@ const App: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isPanelVisible, setIsPanelVisible] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<FileMessage[]>([]);
   const hideTimeoutRef = useRef<number | null>(null);
   const [theme, setTheme] = useState<Theme>(() => {
     try {
@@ -29,6 +31,7 @@ const App: React.FC = () => {
       return 'light';
     }
   });
+  const [resetFilesTrigger, setResetFilesTrigger] = useState(0);
 
   // Theme management
   useEffect(() => {
@@ -114,15 +117,48 @@ const App: React.FC = () => {
     const newConversation: Conversation = { id: newId, title: 'New Chat', messages: [] };
     setConversations(prev => [newConversation, ...prev]);
     setActiveChatId(newId);
+    setAttachedFiles([]); // Clear attached files for new chat
     setIsPanelVisible(false); // Close panel on new chat
   }, []);
 
-  const handleSelectChat = useCallback((id: string) => {
+  const handleSelectChat = useCallback(async (id: string) => {
     if (id !== activeChatId) {
       setActiveChatId(id);
+      // Load files for the selected conversation
+      try {
+        const files = await fileStorage.getFilesByConversation(id);
+        setAttachedFiles(files);
+      } catch (error) {
+        console.error('Error loading conversation files:', error);
+        setAttachedFiles([]);
+      }
     }
     setIsPanelVisible(false); // Close panel on selection
   }, [activeChatId]);
+
+  const handleDeleteChat = useCallback(async (id: string) => {
+    try {
+      // Delete associated files first
+      await fileStorage.deleteFilesByConversation(id);
+      
+      // Remove conversation from state
+      setConversations(prev => prev.filter(c => c.id !== id));
+      
+      // If this was the active chat, switch to the first available chat or create a new one
+      if (id === activeChatId) {
+        const remainingConversations = conversations.filter(c => c.id !== id);
+        if (remainingConversations.length > 0) {
+          setActiveChatId(remainingConversations[0].id);
+          const files = await fileStorage.getFilesByConversation(remainingConversations[0].id);
+          setAttachedFiles(files);
+        } else {
+          handleNewChat();
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+    }
+  }, [activeChatId, conversations, handleNewChat]);
 
   const handleSaveSettings = useCallback((newInstruction: string) => {
     setSaveStatus('saving');
@@ -146,10 +182,27 @@ const App: React.FC = () => {
     setConversations(updater);
   };
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, files?: FileMessage[]) => {
     if (!chat || isLoading || !activeChatId) return;
   
-    const userMessage: Message = { role: 'user', content: message };
+    const userMessage: Message = { 
+      role: 'user', 
+      content: message,
+      files: files || []
+    };
+    
+    // Save files to storage if provided
+    if (files && files.length > 0) {
+      try {
+        await Promise.all(
+          files.map(file => fileStorage.saveFile({ ...file, conversationId: activeChatId }))
+        );
+        setAttachedFiles(prev => [...prev, ...files]);
+      } catch (error) {
+        console.error('Error saving files:', error);
+        // Continue with the message even if file saving fails
+      }
+    }
     
     // Check if we need to generate a title
     const activeConv = conversations.find(c => c.id === activeChatId);
@@ -162,7 +215,7 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     if (isNewChat) {
-      generateTitle(message).then(title => {
+      generateTitle(message, files).then(title => {
         updateConversationState(prev =>
           prev.map(c => c.id === activeChatId ? { ...c, title } : c)
         );
@@ -170,7 +223,21 @@ const App: React.FC = () => {
     }
 
     try {
-      const stream = await chat.sendMessageStream({ message });
+      // For now, we'll include file content in the text message
+      // In a full implementation, you'd use the proper Gemini API for files
+      let fullMessage = message;
+      
+      if (files && files.length > 0) {
+        files.forEach(file => {
+          if (file.type.startsWith('image/')) {
+            fullMessage += `\n[Image: ${file.name}]`;
+          } else {
+            fullMessage += `\n[File: ${file.name}]\n${file.content}\n`;
+          }
+        });
+      }
+
+      const stream = await chat.sendMessageStream({ message: fullMessage });
 
       let modelResponse = '';
       let fullResponse = '';
@@ -203,6 +270,7 @@ const App: React.FC = () => {
       );
     } finally {
       setIsLoading(false);
+      setResetFilesTrigger(t => t + 1);
     }
   };
 
@@ -235,6 +303,16 @@ const App: React.FC = () => {
         messages={activeMessages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
+        attachedFiles={attachedFiles}
+        onFileRemove={async (fileId: string) => {
+          try {
+            await fileStorage.deleteFile(fileId);
+            setAttachedFiles(prev => prev.filter(f => f.id !== fileId));
+          } catch (error) {
+            console.error('Error removing file:', error);
+          }
+        }}
+        resetFilesTrigger={resetFilesTrigger}
       />
       
       <div onMouseEnter={handlePanelMouseEnter} onMouseLeave={handlePanelMouseLeave}>
@@ -249,6 +327,7 @@ const App: React.FC = () => {
           activeChatId={activeChatId}
           onNewChat={handleNewChat}
           onSelectChat={handleSelectChat}
+          onDeleteChat={handleDeleteChat}
           theme={theme}
           onToggleTheme={handleToggleTheme}
         />
