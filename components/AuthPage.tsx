@@ -23,7 +23,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       onAuthSuccess?.();
     } catch (error: any) {
       console.error('Google authentication failed:', error);
-      setError(error.message || 'Google authentication failed');
+      let errorMessage = 'Google authentication failed';
+      
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for authentication. Please add it to Firebase Console > Authentication > Settings > Authorized domains.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -60,7 +68,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       console.error('Email authentication failed:', error);
       let errorMessage = 'Authentication failed';
       
-      if (error.code === 'auth/email-already-in-use') {
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = 'This domain is not authorized for authentication. Please add it to Firebase Console > Authentication > Settings > Authorized domains.';
+      } else if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'Email is already registered. Try signing in instead.';
       } else if (error.code === 'auth/weak-password') {
         errorMessage = 'Password is too weak. Please choose a stronger password.';
