@@ -2,14 +2,14 @@
 import { GoogleGenAI, Chat, Content } from "@google/genai";
 import { Message, FileMessage } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
+    throw new Error("VITE_GEMINI_API_KEY environment variable not set.");
 }
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
-const model = 'gemini-2.5-flash-preview-04-17';
+const model = 'gemini-1.5-flash';
 
 export function createChat(systemInstruction: string, history: Message[]): Chat {
   const formattedHistory: Content[] = history.map(msg => {
@@ -63,8 +63,8 @@ export async function generateTitle(prompt: string, files?: FileMessage[]): Prom
     
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-preview-04-17',
-            contents: titlePrompt,
+            model: 'gemini-1.5-flash',
+            contents: [{ parts: [{ text: titlePrompt }] }],
         });
         // Sanitize the response to remove potential markdown or quotes
         let title = (response.text ?? '').trim().replace(/["'*.]/g, '');

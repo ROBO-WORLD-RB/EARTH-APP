@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Debug Test</title>
+</head>
+<body>
+    <h1>Firebase Debug Test</h1>
+    <div id="status">Testing Firebase...</div>
+    <button id="testBtn">Test Firebase Auth</button>
+
+    <script type="module">
+        console.log('Starting Firebase debug test...');
+        
+        try {
+            // Test environment variables
+            console.log('Environment variables check:');
+            console.log('VITE_FIREBASE_API_KEY exists:', !!import.meta.env.VITE_FIREBASE_API_KEY);
+            console.log('VITE_FIREBASE_AUTH_DOMAIN exists:', !!import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
+            console.log('VITE_FIREBASE_PROJECT_ID exists:', !!import.meta.env.VITE_FIREBASE_PROJECT_ID);
+            
+            // Test Firebase imports
+            const { initializeApp } = await import('firebase/app');
+            const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+            console.log('Firebase imports successful');
+            
+            // Test Firebase initialization
+            const firebaseConfig = {
+                apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+                authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+                projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+                storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+                messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+                appId: import.meta.env.VITE_FIREBASE_APP_ID,
+                measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+            };
+            
+            console.log('Firebase config:', firebaseConfig);
+            
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            console.log('Firebase initialized successfully');
+            
+            onAuthStateChanged(auth, (user) => {
+                console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+                document.getElementById('status').textContent = user ? 'User logged in' : 'No user logged in';
+            });
+            
+            document.getElementById('status').textContent = 'Firebase initialized successfully!';
+            
+        } catch (error) {
+            console.error('Firebase debug test failed:', error);
+            document.getElementById('status').textContent = 'Error: ' + error.message;
+        }
+    </script>
+</body>
+</html>
