@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { usePWA } from '../services/pwaService';
 
-const PWAStatus: React.FC = () => {
+interface PWAStatusProps {
+  className?: string;
+}
+
+const PWAStatus: React.FC<PWAStatusProps> = ({ className = '' }) => {
   const { canInstall, isInstalled, updateAvailable, getAppVersion } = usePWA();
   const [version, setVersion] = useState<string>('unknown');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Check if user has previously dismissed the status
+  useEffect(() => {
+    const statusHidden = localStorage.getItem('pwa-status-hidden');
+    setIsVisible(!statusHidden);
+  }, []);
 
   useEffect(() => {
     getAppVersion().then(setVersion);
@@ -23,9 +34,29 @@ const PWAStatus: React.FC = () => {
     };
   }, []);
 
+  const handleClose = () => {
+    setIsVisible(false);
+    localStorage.setItem('pwa-status-hidden', 'true');
+  };
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <div className="fixed bottom-4 left-4 bg-gray-800 text-white text-xs p-3 rounded-lg shadow-lg z-50 max-w-xs">
-      <h4 className="font-semibold mb-2">PWA Status</h4>
+    <div className={`fixed bottom-4 left-4 bg-gray-800 text-white text-xs p-3 rounded-lg shadow-lg z-50 max-w-xs ${className}`}>
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="font-semibold">PWA Status</h4>
+        <button 
+          onClick={handleClose}
+          className="text-gray-400 hover:text-white transition-colors"
+          aria-label="Close PWA status"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       <div className="space-y-1">
         <div className="flex justify-between">
           <span>Online:</span>
