@@ -1,12 +1,17 @@
-import { initializeApp } from 'firebase/app';
-import { getAnalytics } from 'firebase/analytics';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getAnalytics, Analytics } from 'firebase/analytics';
 import { 
   getAuth, 
+  Auth,
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User
+  User,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
 } from 'firebase/auth';
 
 // Your web app's Firebase configuration
@@ -39,7 +44,10 @@ if (!firebaseConfig.apiKey || !firebaseConfig.authDomain || !firebaseConfig.proj
 }
 
 // Initialize Firebase
-let app, analytics, auth, googleProvider;
+let app: FirebaseApp;
+let analytics: Analytics;
+let auth: Auth;
+let googleProvider: GoogleAuthProvider;
 
 try {
   console.log('Initializing Firebase app...');
@@ -55,22 +63,80 @@ try {
   console.log('Firebase Auth initialized');
   
   googleProvider = new GoogleAuthProvider();
+  googleProvider.addScope('email');
+  googleProvider.addScope('profile');
   console.log('Google Auth Provider initialized');
   
   console.log('Firebase initialization completed successfully');
-} catch (error) {
+} catch (error: any) {
   console.error('Error initializing Firebase:', error);
   console.error('Error details:', error.message, error.stack);
   throw new Error(`Failed to initialize Firebase: ${error.message}`);
 }
 
-// Sign in with Google
+// Sign in with Google (with fallback to redirect)
 export const signInWithGoogle = async () => {
   try {
+    console.log('Attempting Google sign-in with popup...');
     const result = await signInWithPopup(auth, googleProvider);
+    console.log('Google sign-in successful:', result.user);
     return result.user;
-  } catch (error) {
-    console.error('Error signing in with Google:', error);
+  } catch (error: any) {
+    console.error('Error signing in with Google popup:', error);
+    
+    // If popup is blocked, try redirect method
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+      console.log('Popup blocked, trying redirect method...');
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return null; // Redirect will handle the result
+      } catch (redirectError) {
+        console.error('Error with redirect sign-in:', redirectError);
+        throw redirectError;
+      }
+    }
+    
+    throw error;
+  }
+};
+
+// Check for redirect result on app load
+export const checkRedirectResult = async () => {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log('Redirect sign-in successful:', result.user);
+      return result.user;
+    }
+    return null;
+  } catch (error: any) {
+    console.error('Error getting redirect result:', error);
+    throw error;
+  }
+};
+
+// Sign up with email and password
+export const signUpWithEmail = async (email: string, password: string) => {
+  try {
+    console.log('Attempting email sign-up...');
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    console.log('Email sign-up successful:', result.user);
+    return result.user;
+  } catch (error: any) {
+    console.error('Error signing up with email:', error);
+    throw error;
+  }
+};
+
+// Sign in with email and password
+export const signInWithEmail = async (email: string, password: string) => {
+  try {
+    console.log('Attempting email sign-in...');
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    console.log('Email sign-in successful:', result.user);
+    return result.user;
+  } catch (error: any) {
+    console.error('Error signing in with email:', error);
     throw error;
   }
 };
@@ -79,7 +145,7 @@ export const signInWithGoogle = async () => {
 export const signOut = async () => {
   try {
     await firebaseSignOut(auth);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error signing out:', error);
     throw error;
   }

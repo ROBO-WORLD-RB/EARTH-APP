@@ -1,39 +1,53 @@
-const EarthIcon = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    className={`w-8 h-8 ${className}`}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      <linearGradient id="e-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#3b82f6" /> {/* blue-500 */}
-        <stop offset="100%" stopColor="#8b5cf6" /> {/* purple-600 */}
-      </linearGradient>
-      <linearGradient id="spark-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#ec4899" /> {/* pink-500 */}
-        <stop offset="100%" stopColor="#d946ef" /> {/* fuchsia-500 */}
-      </linearGradient>
-    </defs>
-    <path
-      d="M15 4H9C6.23858 4 4 6.23858 4 9V15C4 17.7614 6.23858 20 9 20H15"
-      stroke="url(#e-gradient)"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12 12H4"
-      stroke="url(#e-gradient)"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M18.5 7.5L18 9L16.5 9.5L18 10L18.5 11.5L19 10L20.5 9.5L19 9L18.5 7.5Z"
-      fill="url(#spark-gradient)"
-    />
-  </svg>
-);
+import React from 'react';
+
+interface EarthIconProps {
+  className?: string;
+}
+
+const EarthIcon: React.FC<EarthIconProps> = ({ className = "w-6 h-6" }) => {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="earthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#4F46E5" />
+          <stop offset="50%" stopColor="#7C3AED" />
+          <stop offset="100%" stopColor="#EC4899" />
+        </linearGradient>
+      </defs>
+      
+      {/* Main circle */}
+      <circle
+        cx="50"
+        cy="50"
+        r="45"
+        fill="url(#earthGradient)"
+        stroke="white"
+        strokeWidth="2"
+      />
+      
+      {/* Letter C */}
+      <path
+        d="M35 35 Q25 35 25 50 Q25 65 35 65"
+        stroke="white"
+        strokeWidth="4"
+        fill="none"
+        strokeLinecap="round"
+      />
+      
+      {/* Plus sign */}
+      <path
+        d="M70 45 L70 55 M65 50 L75 50"
+        stroke="#EC4899"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+};
 
 export default EarthIcon;
