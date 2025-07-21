@@ -15,6 +15,7 @@ import UserProfile from './components/UserProfile';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import InstallButton from './components/InstallButton';
+import PWAStatusToggle from './components/PWAStatusToggle';
 
 const DEFAULT_INSTRUCTION = "You are a helpful and friendly AI assistant named EARTH. Provide clear and concise answers.";
 
@@ -477,6 +478,7 @@ const App: React.FC = () => {
       <PWAInstallPrompt />
       <PWAUpdateNotification />
       <InstallButton />
+      <PWAStatusToggle />
       
       <div className="absolute top-4 right-4 z-40">
         <UserProfile user={user!} />
