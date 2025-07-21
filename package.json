@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pwa:audit": "lighthouse http://localhost:5173 --view --preset=desktop",
+    "pwa:test": "npm run build && npm run preview"
   },
   "dependencies": {
     "@google/genai": "^1.8.0",

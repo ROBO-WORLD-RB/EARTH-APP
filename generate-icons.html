@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EARTH AI Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        .icon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
+        .icon-item { text-align: center; }
+        button { background: #8b5cf6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #7c3aed; }
+    </style>
+</head>
+<body>
+    <h1>EARTH AI Icon Generator</h1>
+    <p>This will generate all the required PWA icons for your app.</p>
+    
+    <button onclick="generateAllIcons()">Generate All Icons</button>
+    <button onclick="downloadAll()">Download All</button>
+    
+    <div id="icons" class="icon-grid"></div>
+    
+    <script>
+        const iconSizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+        const canvases = {};
+        
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#8b5cf6');
+            gradient.addColorStop(1, '#ec4899');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Add rounded corners
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.15);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Add earth emoji or text
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            if (size >= 72) {
+                ctx.font = `${size * 0.5}px Arial`;
+                ctx.fillText('🌍', size / 2, size / 2);
+            } else {
+                ctx.font = `bold ${size * 0.4}px Arial`;
+                ctx.fillText('E', size / 2, size / 2);
+            }
+            
+            return canvas;
+        }
+        
+        function generateAllIcons() {
+            const iconsDiv = document.getElementById('icons');
+            iconsDiv.innerHTML = '';
+            
+            iconSizes.forEach(size => {
+                const canvas = createIcon(size);
+                canvases[size] = canvas;
+                
+                const div = document.createElement('div');
+                div.className = 'icon-item';
+                div.innerHTML = `
+                    <h3>${size}x${size}</h3>
+                    ${canvas.outerHTML}
+                    <br>
+                    <button onclick="downloadIcon(${size})">Download</button>
+                `;
+                iconsDiv.appendChild(div);
+            });
+        }
+        
+        function downloadIcon(size) {
+            const canvas = canvases[size];
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        function downloadAll() {
+            iconSizes.forEach(size => {
+                setTimeout(() => downloadIcon(size), size * 10);
+            });
+        }
+        
+        // Generate icons on load
+        window.onload = generateAllIcons;
+    </script>
+</body>
+</html>

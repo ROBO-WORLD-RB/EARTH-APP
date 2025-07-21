@@ -12,6 +12,10 @@ import PanelToggleButton from './components/PanelToggleButton';
 import EarthIcon from './components/icons/EarthIcon';
 import AuthPage from './components/AuthPage';
 import UserProfile from './components/UserProfile';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
+import PWAUpdateNotification from './components/PWAUpdateNotification';
+import PWAStatus from './components/PWAStatus';
+import PWAStatus from './components/PWAStatus';
 
 const DEFAULT_INSTRUCTION = "You are a helpful and friendly AI assistant named EARTH. Provide clear and concise answers.";
 
@@ -470,6 +474,12 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen w-screen font-sans bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 overflow-hidden">
+      {/* PWA Components */}
+      <PWAInstallPrompt />
+      <PWAUpdateNotification />
+      <PWAStatus />
+      <PWAStatus />
+      
       <div className="absolute top-4 right-4 z-40">
         <UserProfile user={user!} />
       </div>

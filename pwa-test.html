@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Test - EARTH AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-item {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #8b5cf6;
+        }
+        .success { border-left-color: #10b981; background: #f0fdf4; }
+        .error { border-left-color: #ef4444; background: #fef2f2; }
+        .warning { border-left-color: #f59e0b; background: #fffbeb; }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #7c3aed; }
+        .status { font-weight: bold; }
+        pre { background: #1f2937; color: #f9fafb; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🌍 EARTH AI - PWA Test Suite</h1>
+    
+    <div class="test-item">
+        <h3>Service Worker Status</h3>
+        <div id="sw-status" class="status">Checking...</div>
+        <button onclick="checkServiceWorker()">Refresh Check</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>Manifest Status</h3>
+        <div id="manifest-status" class="status">Checking...</div>
+        <button onclick="checkManifest()">Check Manifest</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>Install Prompt</h3>
+        <div id="install-status" class="status">Waiting for prompt...</div>
+        <button onclick="triggerInstall()" id="install-btn" disabled>Install App</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>PWA Features</h3>
+        <div id="features-status" class="status">Checking...</div>
+        <button onclick="checkFeatures()">Check Features</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>Cache Status</h3>
+        <div id="cache-status" class="status">Checking...</div>
+        <button onclick="checkCache()">Check Cache</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>Test Results</h3>
+        <pre id="test-results">Click buttons above to run tests...</pre>
+    </div>
+    
+    <script>
+        let deferredPrompt;
+        let testResults = [];
+        
+        // Listen for install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('install-status').innerHTML = '✅ Install prompt available';
+            document.getElementById('install-btn').disabled = false;
+            addResult('Install prompt detected and captured');
+        });
+        
+        // Listen for app installed
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('install-status').innerHTML = '✅ App installed successfully';
+            addResult('App installed successfully');
+        });
+        
+        function addResult(message) {
+            testResults.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+            document.getElementById('test-results').textContent = testResults.join('\n');
+        }
+        
+        async function checkServiceWorker() {
+            const statusEl = document.getElementById('sw-status');
+            
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        statusEl.innerHTML = '✅ Service Worker registered';
+                        statusEl.className = 'status success';
+                        addResult(`Service Worker: ${registration.scope}`);
+                        
+                        if (registration.active) {
+                            addResult('Service Worker is active');
+                        }
+                        if (registration.waiting) {
+                            addResult('Service Worker update waiting');
+                        }
+                    } else {
+                        statusEl.innerHTML = '❌ Service Worker not registered';
+                        statusEl.className = 'status error';
+                        addResult('Service Worker not found');
+                    }
+                } catch (error) {
+                    statusEl.innerHTML = `❌ Error: ${error.message}`;
+                    statusEl.className = 'status error';
+                    addResult(`Service Worker error: ${error.message}`);
+                }
+            } else {
+                statusEl.innerHTML = '❌ Service Worker not supported';
+                statusEl.className = 'status error';
+                addResult('Service Worker not supported in this browser');
+            }
+        }
+        
+        async function checkManifest() {
+            const statusEl = document.getElementById('manifest-status');
+            
+            try {
+                const response = await fetch('/manifest.json');
+                if (response.ok) {
+                    const manifest = await response.json();
+                    statusEl.innerHTML = `✅ Manifest loaded: ${manifest.name}`;
+                    statusEl.className = 'status success';
+                    addResult(`Manifest: ${manifest.name} (${manifest.icons.length} icons)`);
+                } else {
+                    statusEl.innerHTML = '❌ Manifest not found';
+                    statusEl.className = 'status error';
+                    addResult('Manifest file not accessible');
+                }
+            } catch (error) {
+                statusEl.innerHTML = `❌ Error: ${error.message}`;
+                statusEl.className = 'status error';
+                addResult(`Manifest error: ${error.message}`);
+            }
+        }
+        
+        async function triggerInstall() {
+            if (deferredPrompt) {
+                try {
+                    await deferredPrompt.prompt();
+                    const choiceResult = await deferredPrompt.userChoice;
+                    addResult(`Install prompt result: ${choiceResult.outcome}`);
+                    deferredPrompt = null;
+                    document.getElementById('install-btn').disabled = true;
+                } catch (error) {
+                    addResult(`Install error: ${error.message}`);
+                }
+            } else {
+                addResult('No install prompt available');
+            }
+        }
+        
+        function checkFeatures() {
+            const statusEl = document.getElementById('features-status');
+            const features = [];
+            
+            // Check PWA features
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                features.push('Running in standalone mode');
+            }
+            
+            if ('serviceWorker' in navigator) {
+                features.push('Service Worker supported');
+            }
+            
+            if ('caches' in window) {
+                features.push('Cache API supported');
+            }
+            
+            if ('PushManager' in window) {
+                features.push('Push notifications supported');
+            }
+            
+            if ('share' in navigator) {
+                features.push('Web Share API supported');
+            }
+            
+            if ('storage' in navigator && 'persist' in navigator.storage) {
+                features.push('Persistent storage supported');
+            }
+            
+            statusEl.innerHTML = `✅ ${features.length} features available`;
+            statusEl.className = 'status success';
+            features.forEach(feature => addResult(feature));
+        }
+        
+        async function checkCache() {
+            const statusEl = document.getElementById('cache-status');
+            
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    statusEl.innerHTML = `✅ ${cacheNames.length} caches found`;
+                    statusEl.className = 'status success';
+                    
+                    for (const cacheName of cacheNames) {
+                        const cache = await caches.open(cacheName);
+                        const keys = await cache.keys();
+                        addResult(`Cache "${cacheName}": ${keys.length} items`);
+                    }
+                } catch (error) {
+                    statusEl.innerHTML = `❌ Error: ${error.message}`;
+                    statusEl.className = 'status error';
+                    addResult(`Cache error: ${error.message}`);
+                }
+            } else {
+                statusEl.innerHTML = '❌ Cache API not supported';
+                statusEl.className = 'status error';
+                addResult('Cache API not supported');
+            }
+        }
+        
+        // Auto-run initial checks
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkServiceWorker();
+                checkManifest();
+                checkFeatures();
+                checkCache();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

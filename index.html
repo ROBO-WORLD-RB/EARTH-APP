@@ -2,8 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>EARTH: AI Brain Studio</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="A sophisticated chat application where you can define the AI's personality and behavior. Craft your perfect conversation partner." />
+    <meta name="keywords" content="AI, chatbot, artificial intelligence, conversation, assistant, brain studio" />
+    <meta name="author" content="EARTH AI Team" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="msapplication-TileColor" content="#8b5cf6" />
+    <meta name="msapplication-navbutton-color" content="#8b5cf6" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.svg" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" sizes="32x32" href="/icons/icon-32x32.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="16x16" href="/icons/icon-16x16.svg" />
+    <link rel="shortcut icon" href="/favicon.svg" />
+    
+    <!-- Apple Web App -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="EARTH AI" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.svg" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="EARTH: AI Brain Studio" />
+    <meta property="og:description" content="A sophisticated chat application where you can define the AI's personality and behavior." />
+    <meta property="og:image" content="/icons/icon-512x512.svg" />
+    <meta property="og:url" content="https://earth-ai.app" />
+    <meta property="og:site_name" content="EARTH AI" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="EARTH: AI Brain Studio" />
+    <meta name="twitter:description" content="A sophisticated chat application where you can define the AI's personality and behavior." />
+    <meta name="twitter:image" content="/icons/icon-512x512.svg" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/index.css" as="style" />
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script" />
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -11,6 +62,19 @@
       }
     </script>
     <link rel="stylesheet" href="/index.css">
+    
+    <!-- PWA Installation Script -->
+    <script>
+      // Prevent zoom on double tap for better app-like experience
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+          event.preventDefault();
+        }
+        lastTouchEnd = now;
+      }, false);
+    </script>
   </head>
   <body class="">
     <div id="root"></div>
