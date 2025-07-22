@@ -16,6 +16,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import PWAUpdateNotification from './components/PWAUpdateNotification';
 import InstallButton from './components/InstallButton';
 import PWAStatusToggle from './components/PWAStatusToggle';
+import QuickStartGuide from './components/QuickStartGuide';
 
 const DEFAULT_INSTRUCTION = "You are a helpful and friendly AI assistant named EARTH. Provide clear and concise answers.";
 
@@ -42,6 +43,7 @@ const App: React.FC = () => {
     }
   });
   const [resetFilesTrigger, setResetFilesTrigger] = useState(0);
+  const [showQuickStart, setShowQuickStart] = useState(false);
   
   // Auth state listener
   useEffect(() => {
@@ -114,6 +116,12 @@ const App: React.FC = () => {
         const firstConversation: Conversation = { id: newId, title: 'New Chat', messages: [] };
         setConversations([firstConversation]);
         setActiveChatId(newId);
+        
+        // Show quick start guide for new users
+        const hasSeenQuickStart = localStorage.getItem(`${userPrefix}seen-quick-start`);
+        if (!hasSeenQuickStart) {
+          setShowQuickStart(true);
+        }
       }
     } catch (e) {
       console.error("Could not read from localStorage, initializing fresh state.", e);
@@ -520,6 +528,22 @@ const App: React.FC = () => {
           onToggleTheme={handleToggleTheme}
         />
       </div>
+      
+      {/* Quick Start Guide */}
+      {showQuickStart && (
+        <QuickStartGuide
+          onSelect={(instruction) => {
+            setSystemInstruction(instruction);
+            handleSaveSettings(instruction);
+            setShowQuickStart(false);
+            localStorage.setItem(`earth-${user!.uid}-seen-quick-start`, 'true');
+          }}
+          onClose={() => {
+            setShowQuickStart(false);
+            localStorage.setItem(`earth-${user!.uid}-seen-quick-start`, 'true');
+          }}
+        />
+      )}
     </div>
   );
 };

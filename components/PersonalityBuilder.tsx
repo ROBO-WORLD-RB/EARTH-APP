@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ModalPortal from './ModalPortal';
+import ModalWrapper from './ModalWrapper';
 
 interface PersonalityBuilderProps {
   onComplete: (instruction: string) => void;
@@ -166,8 +168,8 @@ const PersonalityBuilder: React.FC<PersonalityBuilderProps> = ({ onComplete, onC
   const canProceed = selections[currentStepData.id];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <ModalPortal>
+      <ModalWrapper onClose={onCancel} maxWidth="2xl">
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
@@ -272,8 +274,8 @@ const PersonalityBuilder: React.FC<PersonalityBuilderProps> = ({ onComplete, onC
             </button>
           </div>
         </div>
-      </div>
-    </div>
+      </ModalWrapper>
+    </ModalPortal>
   );
 };
 
