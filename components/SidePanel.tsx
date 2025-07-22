@@ -13,6 +13,8 @@ import PersonalityBuilder from './PersonalityBuilder';
 import InstructionHelp from './InstructionHelp';
 import SavedPersonalities from './SavedPersonalities';
 import { usePersonalities } from '../services/personalityService';
+import SavedPersonalities from './SavedPersonalities';
+import { usePersonalities } from '../services/personalityService';
 
 interface SidePanelProps {
   isVisible: boolean;
@@ -32,14 +34,14 @@ interface SidePanelProps {
 const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, onSave, onClear, saveStatus, conversations, activeChatId, onNewChat, onSelectChat, onDeleteChat, theme, onToggleTheme }) => {
   const [instruction, setInstruction] = useState(initialInstruction);
   const { canInstall, isInstalled, showInstallPrompt } = usePWA();
+  const { savePersonality, recentPersonalities } = usePersonalities();
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [showSaved, setShowSaved] = useState(false);
+  const [showSavedPersonalities, setShowSavedPersonalities] = useState(false);
   const [showQuickStart, setShowQuickStart] = useState(false);
-  const { savePersonality, recentPersonalities } = usePersonalities();
 
   useEffect(() => {
     // Check if device is iOS
@@ -55,17 +57,22 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
 
   const handleSave = () => {
     onSave(instruction);
-    
-    // Optionally save to personalities
+  };
+  
+  const handleSavePersonality = () => {
+    // Show a prompt to name the personality
     if (instruction.trim().length > 0) {
-      try {
-        savePersonality({
-          name: `Brain ${new Date().toLocaleDateString()}`,
-          instruction: instruction,
-          category: 'Custom',
-          icon: '🧠'
-        });
-      } catch (error) {
+      const name = prompt('Enter a name for this personality:', `Brain ${new Date().toLocaleDateString()}`);
+      if (name) {
+        try {
+          savePersonality({
+            name,
+            instruction: instruction,
+            category: 'Custom',
+            icon: '🧠'
+          });
+          alert('Personality saved successfully!');
+        } catch (error) {
         console.error('Error saving personality:', error);
       }
     }
@@ -176,12 +183,22 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
                 Builder
               </button>
               <button
-                onClick={() => setShowSaved(true)}
+                onClick={() => setShowSavedPersonalities(true)}
                 className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
+                My Brains
+              </button>
+              <button
+                onClick={handleSavePersonality}
+                className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                Save Brain
                 Saved
               </button>
               <button
@@ -390,15 +407,15 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
       )}
       
       {/* Saved Personalities Modal */}
-      {showSaved && (
+      {showSavedPersonalities && (
         <SavedPersonalities
           onSelect={(instruction, name) => {
             setInstruction(instruction);
-            setShowSaved(false);
+            setShowSavedPersonalities(false);
             // Optional: Auto-save the selected personality
             // onSave(instruction);
           }}
-          onCancel={() => setShowSaved(false)}
+          onCancel={() => setShowSavedPersonalities(false)}
         />
       )}
       
