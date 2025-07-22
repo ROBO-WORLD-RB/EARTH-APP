@@ -8,6 +8,9 @@ import EarthIcon from './icons/EarthIcon';
 import NewChatIcon from './icons/NewChatIcon';
 import InstallIcon from './icons/InstallIcon';
 import { usePWA } from '../services/pwaService';
+import PersonalityTemplates from './PersonalityTemplates';
+import PersonalityBuilder from './PersonalityBuilder';
+import InstructionHelp from './InstructionHelp';
 
 interface SidePanelProps {
   isVisible: boolean;
@@ -29,6 +32,9 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
   const { canInstall, isInstalled, showInstallPrompt } = usePWA();
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     // Check if device is iOS
@@ -88,12 +94,23 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
         </p>
         
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">System Instruction</h2>
-        <textarea
-          value={instruction}
-          onChange={(e) => setInstruction(e.target.value)}
-          placeholder="e.g., You are a witty pirate captain..."
-          className="w-full h-32 mt-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-400 focus:outline-none resize-none transition-colors"
-        />
+        <div className="relative">
+          <textarea
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder="e.g., You are a witty pirate captain..."
+            className="w-full h-32 mt-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-400 focus:outline-none resize-none transition-colors"
+          />
+          <button
+            onClick={() => setShowHelp(true)}
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600"
+            title="Get help with instructions"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+        </div>
         <div className="mt-3 flex flex-col space-y-2">
           <div className="h-5 text-sm text-center font-medium">
             {getStatusMessage()}
@@ -114,6 +131,29 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
               <ClearIcon />
               Reset
             </button>
+          </div>
+          
+          <div className="mt-4 flex justify-center">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Use Template
+              </button>
+              <button
+                onClick={() => setShowBuilder(true)}
+                className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Build Custom
+              </button>
+            </div>
           </div>
         </div>
         <div className="border-t my-6 border-gray-200 dark:border-gray-700"></div>
@@ -253,6 +293,37 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Personality Templates Modal */}
+      {showTemplates && (
+        <PersonalityTemplates
+          onSelect={(instruction, name) => {
+            setInstruction(instruction);
+            setShowTemplates(false);
+            // Optional: Auto-save the template
+            // onSave(instruction);
+          }}
+          onCancel={() => setShowTemplates(false)}
+        />
+      )}
+      
+      {/* Personality Builder Modal */}
+      {showBuilder && (
+        <PersonalityBuilder
+          onComplete={(instruction) => {
+            setInstruction(instruction);
+            setShowBuilder(false);
+            // Optional: Auto-save the built instruction
+            // onSave(instruction);
+          }}
+          onCancel={() => setShowBuilder(false)}
+        />
+      )}
+      
+      {/* Instruction Help Modal */}
+      {showHelp && (
+        <InstructionHelp onClose={() => setShowHelp(false)} />
       )}
     </div>
   );
