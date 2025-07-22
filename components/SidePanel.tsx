@@ -11,6 +11,8 @@ import { usePWA } from '../services/pwaService';
 import PersonalityTemplates from './PersonalityTemplates';
 import PersonalityBuilder from './PersonalityBuilder';
 import InstructionHelp from './InstructionHelp';
+import SavedPersonalities from './SavedPersonalities';
+import { usePersonalities } from '../services/personalityService';
 
 interface SidePanelProps {
   isVisible: boolean;
@@ -35,6 +37,9 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
   const [showTemplates, setShowTemplates] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
+  const { savePersonality, recentPersonalities } = usePersonalities();
 
   useEffect(() => {
     // Check if device is iOS
@@ -48,7 +53,24 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
     setInstruction(initialInstruction);
   }, [initialInstruction]);
 
-  const handleSave = () => onSave(instruction);
+  const handleSave = () => {
+    onSave(instruction);
+    
+    // Optionally save to personalities
+    if (instruction.trim().length > 0) {
+      try {
+        savePersonality({
+          name: `Brain ${new Date().toLocaleDateString()}`,
+          instruction: instruction,
+          category: 'Custom',
+          icon: '🧠'
+        });
+      } catch (error) {
+        console.error('Error saving personality:', error);
+      }
+    }
+  };
+  
   const handleClear = () => {
     setInstruction('');
     onClear();
@@ -134,7 +156,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
           </div>
           
           <div className="mt-4 flex justify-center">
-            <div className="flex space-x-4">
+            <div className="flex flex-wrap justify-center gap-3">
               <button
                 onClick={() => setShowTemplates(true)}
                 className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
@@ -142,7 +164,7 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                Use Template
+                Templates
               </button>
               <button
                 onClick={() => setShowBuilder(true)}
@@ -151,10 +173,51 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
-                Build Custom
+                Builder
+              </button>
+              <button
+                onClick={() => setShowSaved(true)}
+                className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                Saved
+              </button>
+              <button
+                onClick={() => setShowQuickStart(true)}
+                className="text-sm flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Quick Start
               </button>
             </div>
           </div>
+          
+          {/* Recent Personalities */}
+          {recentPersonalities.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Recent Personalities</h3>
+              <div className="space-y-1">
+                {recentPersonalities.slice(0, 3).map(personality => (
+                  <button
+                    key={personality.id}
+                    onClick={() => {
+                      setInstruction(personality.instruction);
+                      // Optional: Auto-save
+                      // onSave(personality.instruction);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                  >
+                    <span className="mr-2">{personality.icon || '🧠'}</span>
+                    <span className="truncate">{personality.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <div className="border-t my-6 border-gray-200 dark:border-gray-700"></div>
       </div>
@@ -324,6 +387,32 @@ const SidePanel: React.FC<SidePanelProps> = ({ isVisible, initialInstruction, on
       {/* Instruction Help Modal */}
       {showHelp && (
         <InstructionHelp onClose={() => setShowHelp(false)} />
+      )}
+      
+      {/* Saved Personalities Modal */}
+      {showSaved && (
+        <SavedPersonalities
+          onSelect={(instruction, name) => {
+            setInstruction(instruction);
+            setShowSaved(false);
+            // Optional: Auto-save the selected personality
+            // onSave(instruction);
+          }}
+          onCancel={() => setShowSaved(false)}
+        />
+      )}
+      
+      {/* Quick Start Guide Modal */}
+      {showQuickStart && (
+        <QuickStartGuide
+          onSelect={(instruction) => {
+            setInstruction(instruction);
+            setShowQuickStart(false);
+            // Optional: Auto-save the selected instruction
+            // onSave(instruction);
+          }}
+          onClose={() => setShowQuickStart(false)}
+        />
       )}
     </div>
   );

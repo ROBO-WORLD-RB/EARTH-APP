@@ -1,7 +1,7 @@
 {
   "name": "EARTH: AI Brain Studio",
   "short_name": "EARTH AI",
-  "description": "A sophisticated chat application where you can define the AI's personality and behavior. Craft your perfect conversation partner.",
+  "description": "A sophisticated chat application where you can define the AI's personality and behavior using templates, builders, and guides. Craft your perfect conversation partner.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

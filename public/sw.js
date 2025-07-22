@@ -1,6 +1,6 @@
-const CACHE_NAME = 'earth-ai-v1.0.0';
-const STATIC_CACHE_NAME = 'earth-static-v1.0.0';
-const DYNAMIC_CACHE_NAME = 'earth-dynamic-v1.0.0';
+const CACHE_NAME = 'earth-ai-v1.1.0';
+const STATIC_CACHE_NAME = 'earth-static-v1.1.0';
+const DYNAMIC_CACHE_NAME = 'earth-dynamic-v1.1.0';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -9,14 +9,17 @@ const STATIC_ASSETS = [
   '/index.css',
   '/index.tsx',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg',
+  '/favicon.svg',
+  '/offline.html'
 ];
 
 // Assets to cache on first request
 const DYNAMIC_ASSETS = [
   '/components/',
   '/services/',
+  '/data/',
   'https://cdn.tailwindcss.com'
 ];
 
@@ -81,6 +84,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Special handling for personality data files
+  const isPersonalityData = request.url.includes('/data/personalityTemplates') || 
+                           request.url.includes('/data/exampleInstructions');
+  
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
@@ -102,9 +109,17 @@ self.addEventListener('fetch', (event) => {
             const responseToCache = networkResponse.clone();
             
             // Determine which cache to use
-            const cacheName = STATIC_ASSETS.some(asset => request.url.includes(asset)) 
-              ? STATIC_CACHE_NAME 
-              : DYNAMIC_CACHE_NAME;
+            let cacheName = STATIC_CACHE_NAME;
+            
+            // Use dynamic cache for most resources
+            if (!STATIC_ASSETS.some(asset => request.url.includes(asset))) {
+              cacheName = DYNAMIC_CACHE_NAME;
+            }
+            
+            // Always cache personality data in static cache for offline use
+            if (isPersonalityData) {
+              cacheName = STATIC_CACHE_NAME;
+            }
             
             // Cache the response
             caches.open(cacheName)
@@ -121,6 +136,19 @@ self.addEventListener('fetch', (event) => {
             // Return offline page for navigation requests
             if (request.destination === 'document') {
               return caches.match('/offline.html');
+            }
+            
+            // Return empty JSON for personality data if not cached
+            if (isPersonalityData) {
+              if (request.url.includes('personalityTemplates')) {
+                return new Response(JSON.stringify({ personalityTemplates: [], personalityCategories: [] }), {
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              } else if (request.url.includes('exampleInstructions')) {
+                return new Response(JSON.stringify({ exampleInstructions: [] }), {
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              }
             }
             
             // Return a generic offline response for other requests

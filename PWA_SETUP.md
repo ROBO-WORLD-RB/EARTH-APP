@@ -69,7 +69,15 @@ npm run dev
 
 ## 🎯 PWA Status Component
 
-A temporary status component has been added to show:
+A status component has been added to show:
+
+## 🧠 AI Personality Features
+
+The PWA now includes offline support for:
+- AI Personality Templates
+- Interactive Personality Builder
+- Instruction Help Guides
+- Example Instructions Library
 - Online/Offline status
 - Install availability
 - Installation status
